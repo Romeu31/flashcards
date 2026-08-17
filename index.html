@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#315efb" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Flashcards GP" />
+  <meta name="format-detection" content="telephone=no" />
+  <title>Flashcards — Módulo 1</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --surface: #ffffff;
+      --surface-soft: #eef2f7;
+      --text: #172033;
+      --muted: #667085;
+      --border: #dfe5ee;
+      --primary: #315efb;
+      --primary-hover: #244ad5;
+      --success: #138a57;
+      --success-bg: #eaf8f1;
+      --danger: #c53a46;
+      --danger-bg: #fff0f1;
+      --shadow: 0 18px 50px rgba(28, 39, 60, 0.09);
+      --radius: 20px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(49, 94, 251, 0.08), transparent 34%),
+        var(--bg);
+      color: var(--text);
+    }
+
+    button { font: inherit; }
+
+    .app {
+      width: min(920px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: calc(20px + env(safe-area-inset-top)) 0 calc(36px + env(safe-area-inset-bottom));
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .title-wrap h1 {
+      margin: 0;
+      font-size: clamp(1.35rem, 4vw, 2rem);
+      letter-spacing: -0.03em;
+    }
+
+    .title-wrap p {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .reset-btn {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.78);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 700;
+      transition: .2s ease;
+      white-space: nowrap;
+    }
+
+    .reset-btn:hover { background: var(--surface); transform: translateY(-1px); }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .stat {
+      background: rgba(255,255,255,0.82);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 13px 14px;
+    }
+
+    .stat-label {
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+
+    .stat-value {
+      margin-top: 3px;
+      font-size: 1.25rem;
+      font-weight: 800;
+    }
+
+    .stat.success .stat-value { color: var(--success); }
+    .stat.danger .stat-value { color: var(--danger); }
+
+    .progress-shell {
+      height: 10px;
+      background: #e4e9f1;
+      border-radius: 999px;
+      overflow: hidden;
+      margin: 10px 0 22px;
+    }
+
+    .progress-bar {
+      width: 0;
+      height: 100%;
+      background: linear-gradient(90deg, #315efb, #5d7cff);
+      border-radius: inherit;
+      transition: width .25s ease;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .card-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      padding: 18px 20px 0;
+    }
+
+    .eyebrow {
+      font-size: .78rem;
+      font-weight: 800;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+
+    .attempt-badge {
+      color: var(--muted);
+      background: var(--surface-soft);
+      border-radius: 999px;
+      padding: 7px 10px;
+      font-size: .8rem;
+      font-weight: 700;
+    }
+
+    .card-body {
+      min-height: 330px;
+      padding: 24px 24px 22px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .term {
+      margin: 0;
+      font-size: clamp(1.8rem, 7vw, 3.35rem);
+      line-height: 1.05;
+      letter-spacing: -0.04em;
+    }
+
+    .hint {
+      margin: 14px auto 0;
+      max-width: 560px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .answer {
+      display: none;
+      margin: 24px auto 0;
+      max-width: 650px;
+      padding: 18px 20px;
+      border: 1px solid #cbd6ff;
+      background: #f4f6ff;
+      border-radius: 14px;
+      font-size: clamp(1rem, 2.8vw, 1.18rem);
+      line-height: 1.65;
+      text-align: left;
+    }
+
+    .answer.visible { display: block; animation: fadeIn .18s ease; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      padding: 0 20px 20px;
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 14px;
+      min-height: 56px;
+      padding: 14px 18px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform .16s ease, filter .16s ease, background .16s ease;
+    }
+
+    .btn:hover { transform: translateY(-1px); filter: brightness(.98); }
+    .btn:active { transform: translateY(0); }
+
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-hover); }
+
+    .rating-actions {
+      display: none;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .rating-actions.visible { display: grid; }
+
+    .btn-success { background: var(--success-bg); color: var(--success); border: 1px solid #c9ead9; }
+    .btn-danger { background: var(--danger-bg); color: var(--danger); border: 1px solid #ffd2d7; }
+
+    .feedback {
+      min-height: 24px;
+      padding: 0 20px 18px;
+      text-align: center;
+      font-weight: 800;
+    }
+
+    .feedback.success { color: var(--success); }
+    .feedback.error { color: var(--danger); }
+
+    .complete {
+      display: none;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      text-align: center;
+      padding: 52px 24px;
+    }
+
+    .complete.visible { display: block; }
+    .study.hidden { display: none; }
+
+    .complete-icon {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      margin: 0 auto 18px;
+      background: var(--success-bg);
+      color: var(--success);
+      font-size: 2rem;
+      font-weight: 900;
+    }
+
+    .complete h2 {
+      margin: 0;
+      font-size: clamp(1.6rem, 5vw, 2.3rem);
+      letter-spacing: -0.03em;
+    }
+
+    .complete p {
+      color: var(--muted);
+      margin: 10px 0 24px;
+      line-height: 1.55;
+    }
+
+    .complete .btn { min-width: 220px; }
+
+    .complete-actions {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn-review {
+      background: #fff7e8;
+      color: #9a5b00;
+      border: 1px solid #f4d49a;
+    }
+
+    .review-note {
+      display: none;
+      margin: -8px 0 18px;
+      color: #9a5b00;
+      font-weight: 800;
+    }
+
+    .review-note.visible { display: block; }
+
+    .keyboard-tip {
+      text-align: center;
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: .82rem;
+    }
+
+    kbd {
+      background: white;
+      border: 1px solid var(--border);
+      border-bottom-width: 2px;
+      border-radius: 6px;
+      padding: 2px 6px;
+      font-family: inherit;
+      font-size: .78rem;
+    }
+
+
+
+    .install-card {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+      padding: 13px 14px;
+      border: 1px solid #cbd6ff;
+      background: #f4f6ff;
+      border-radius: 14px;
+    }
+
+    .install-card.visible { display: flex; }
+
+    .install-copy {
+      min-width: 0;
+      color: var(--text);
+      font-size: .9rem;
+      line-height: 1.35;
+    }
+
+    .install-copy strong { display: block; margin-bottom: 2px; }
+
+    .install-btn {
+      flex: 0 0 auto;
+      border: 0;
+      background: var(--primary);
+      color: white;
+      border-radius: 11px;
+      padding: 10px 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 18px;
+      padding-bottom: calc(18px + env(safe-area-inset-bottom));
+      background: rgba(12, 20, 36, .42);
+      backdrop-filter: blur(6px);
+    }
+
+    .modal-backdrop.visible { display: flex; }
+
+    .install-modal {
+      width: min(520px, 100%);
+      background: var(--surface);
+      border-radius: 22px;
+      padding: 22px;
+      box-shadow: 0 24px 80px rgba(12, 20, 36, .24);
+    }
+
+    .install-modal h2 { margin: 0 0 8px; font-size: 1.35rem; }
+    .install-modal p { margin: 0 0 16px; color: var(--muted); line-height: 1.55; }
+    .install-steps { margin: 0 0 18px; padding-left: 21px; line-height: 1.65; }
+    .install-steps li + li { margin-top: 6px; }
+    .close-modal { width: 100%; }
+
+    @media (display-mode: standalone) {
+      .install-card { display: none !important; }
+    }
+
+    @media (max-width: 680px) {
+      .app { width: min(100% - 18px, 920px); padding-top: calc(10px + env(safe-area-inset-top)); }
+      .topbar { align-items: flex-start; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .card-head { padding: 15px 15px 0; }
+      .card-body { min-height: 300px; padding: 20px 17px 18px; }
+      .actions { padding: 0 14px 14px; }
+      .feedback { padding-bottom: 14px; }
+      .keyboard-tip { display: none; }
+    }
+
+    @media (max-width: 440px) {
+      .title-wrap p { font-size: .86rem; }
+      .reset-btn { padding: 9px 10px; font-size: .86rem; }
+      .rating-actions { grid-template-columns: 1fr; }
+      .install-card { align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <div class="topbar">
+      <div class="title-wrap">
+        <h1>Flashcards — Módulo 1</h1>
+        <p>Continue até acertar todos os conceitos.</p>
+      </div>
+      <button class="reset-btn" id="resetTop" type="button">Reiniciar</button>
+    </div>
+
+
+
+    <aside class="install-card" id="installCard" aria-label="Instalar no iPhone">
+      <div class="install-copy">
+        <strong>Usar como aplicativo no iPhone</strong>
+        Adicione à Tela de Início para abrir em tela cheia e continuar de onde parou.
+      </div>
+      <button class="install-btn" id="installHelpBtn" type="button">Como fazer</button>
+    </aside>
+
+    <section class="stats" aria-label="Progresso do estudo">
+      <div class="stat success">
+        <div class="stat-label">Acertos</div>
+        <div class="stat-value" id="correctCount">0</div>
+      </div>
+      <div class="stat danger">
+        <div class="stat-label">Erros</div>
+        <div class="stat-value" id="wrongCount">0</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Restantes</div>
+        <div class="stat-value" id="remainingCount">100</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Progresso</div>
+        <div class="stat-value" id="progressText">0/100</div>
+      </div>
+    </section>
+
+    <div class="progress-shell" aria-hidden="true">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <section class="study" id="studyArea">
+      <article class="card">
+        <div class="card-head">
+          <span class="eyebrow">Conceito</span>
+          <span class="attempt-badge" id="attemptBadge">Primeira vez</span>
+        </div>
+
+        <div class="card-body">
+          <h2 class="term" id="question">Projeto</h2>
+          <p class="hint" id="hint">Pense na definição antes de revelar a resposta.</p>
+          <div class="answer" id="answer"></div>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-primary" id="showAnswerBtn" type="button">Revelar resposta</button>
+          <div class="rating-actions" id="ratingActions">
+            <button class="btn btn-danger" id="wrongBtn" type="button">Errei</button>
+            <button class="btn btn-success" id="correctBtn" type="button">Acertei</button>
+          </div>
+        </div>
+
+        <div class="feedback" id="feedback" aria-live="polite"></div>
+      </article>
+
+      <p class="keyboard-tip">
+        Atalhos: <kbd>Espaço</kbd> revelar · <kbd>1</kbd> errei · <kbd>2</kbd> acertei
+      </p>
+    </section>
+
+    <section class="complete" id="completeArea">
+      <div class="complete-icon" id="completeIcon">✓</div>
+      <h2 id="completeTitle">Parabéns! Você acertou todos!</h2>
+      <p id="completeSummary">Você concluiu os 100 flashcards.</p>
+      <p class="review-note" id="reviewNote"></p>
+      <div class="complete-actions">
+        <button class="btn btn-review" id="reviewWrongBtn" type="button" style="display:none;">Revisar questões erradas</button>
+        <button class="btn btn-primary" id="resetComplete" type="button">Estudar novamente</button>
+      </div>
+    </section>
+  </main>
+
+
+
+  <div class="modal-backdrop" id="installModal" role="dialog" aria-modal="true" aria-labelledby="installModalTitle">
+    <div class="install-modal">
+      <h2 id="installModalTitle">Adicionar à Tela de Início</h2>
+      <p>No iPhone, o Safari não permite que um site instale um atalho sozinho. Faça estes passos uma vez:</p>
+      <ol class="install-steps">
+        <li>Abra esta página pelo <strong>Safari</strong>.</li>
+        <li>Toque no botão <strong>Compartilhar</strong> do Safari.</li>
+        <li>Role a lista e toque em <strong>Adicionar à Tela de Início</strong>.</li>
+        <li>Confirme em <strong>Adicionar</strong>.</li>
+      </ol>
+      <button class="btn btn-primary close-modal" id="closeInstallModal" type="button">Entendi</button>
+    </div>
+  </div>
+
+  <script>
+    // ============================================================
+    // FLASHCARDS — edite, remova ou adicione itens nesta lista.
+    // ============================================================
+    const flashcards = [
+      { pergunta: "Projeto", resposta: "Esforço temporário realizado para criar uma mudança, entrega ou resultado específico." },
+      { pergunta: "Operação", resposta: "Trabalho contínuo ou recorrente que mantém um serviço ou processo funcionando." },
+      { pergunta: "Produto", resposta: "Solução que gera valor e pode continuar evoluindo depois do projeto." },
+      { pergunta: "Programa", resposta: "Conjunto coordenado de projetos e trabalhos relacionados para obter benefícios conjuntos." },
+      { pergunta: "Portfólio", resposta: "Conjunto de iniciativas selecionadas e priorizadas conforme estratégia, riscos e recursos." },
+      { pergunta: "Temporariedade", resposta: "Característica de possuir início e fim definidos." },
+      { pergunta: "Unicidade", resposta: "Característica de produzir uma mudança ou resultado específico, mesmo com atividades conhecidas." },
+      { pergunta: "Valor", resposta: "Utilidade ou resultado relevante gerado para stakeholders e para o negócio." },
+      { pergunta: "Benefício", resposta: "Melhoria mensurável produzida pelo uso dos resultados do projeto." },
+      { pergunta: "Objetivo", resposta: "Resultado específico e preferencialmente mensurável que se pretende alcançar." },
+      { pergunta: "Problema", resposta: "Situação atual indesejada que gera impacto e precisa ser compreendida antes da solução." },
+      { pergunta: "Solução", resposta: "Forma proposta de tratar um problema ou aproveitar uma oportunidade." },
+      { pergunta: "Entrega", resposta: "Resultado verificável produzido pelo projeto." },
+      { pergunta: "Atividade", resposta: "Trabalho executado para produzir uma entrega ou resultado." },
+      { pergunta: "Marco", resposta: "Ponto significativo do projeto, normalmente sem duração." },
+      { pergunta: "Requisito", resposta: "Necessidade ou condição que a solução deve atender." },
+      { pergunta: "Critério de aceite", resposta: "Condição objetiva usada para verificar se uma entrega pode ser aceita." },
+      { pergunta: "Recurso", resposta: "Pessoa, equipamento, material, orçamento ou capacidade necessária ao projeto." },
+      { pergunta: "Artefato", resposta: "Documento, registro ou objeto usado para apoiar a gestão do projeto." },
+      { pergunta: "Stakeholder", resposta: "Pessoa, grupo ou organização que afeta, é afetada ou percebe ser afetada pelo projeto." },
+      { pergunta: "Sponsor", resposta: "Pessoa ou grupo que oferece apoio executivo, legitimidade e escalonamento ao projeto." },
+      { pergunta: "Gerente de projetos", resposta: "Profissional que integra e coordena o projeto para alcançar seus objetivos." },
+      { pergunta: "Product Owner", resposta: "Papel que orienta valor, prioridades e backlog do produto dentro de sua alçada." },
+      { pergunta: "Gestor funcional", resposta: "Responsável pelas pessoas e recursos de uma área funcional." },
+      { pergunta: "Cliente", resposta: "Pessoa ou organização que recebe, contrata ou utiliza o resultado do projeto." },
+      { pergunta: "Usuário", resposta: "Pessoa que utiliza diretamente o produto, serviço ou resultado." },
+      { pergunta: "Equipe do projeto", resposta: "Pessoas que realizam o trabalho necessário para produzir as entregas." },
+      { pergunta: "Fornecedor", resposta: "Parte externa que fornece produto, serviço ou capacidade ao projeto." },
+      { pergunta: "PMO", resposta: "Estrutura que apoia, padroniza ou governa a gestão de projetos conforme seu mandato." },
+      { pergunta: "Governança", resposta: "Sistema de autoridade, responsabilidade, decisão, controle e escalonamento." },
+      { pergunta: "Autoridade", resposta: "Poder formal concedido para tomar determinado tipo de decisão." },
+      { pergunta: "Responsabilidade", resposta: "Dever de executar ou responder por um trabalho ou resultado." },
+      { pergunta: "Alçada", resposta: "Limite formal de autoridade para aprovar determinada decisão." },
+      { pergunta: "Matriz de alçadas", resposta: "Documento que define quem aprova cada tipo de decisão e até qual limite." },
+      { pergunta: "RACI", resposta: "Matriz que mostra quem executa, responde, é consultado e é informado." },
+      { pergunta: "Responsible", resposta: "Pessoa ou grupo que executa o trabalho na RACI." },
+      { pergunta: "Accountable", resposta: "Pessoa que responde pelo resultado ou decisão na RACI." },
+      { pergunta: "Consulted", resposta: "Pessoa que deve ser ouvida antes da ação ou decisão." },
+      { pergunta: "Informed", resposta: "Pessoa que deve receber a informação apropriada." },
+      { pergunta: "Termo de Abertura", resposta: "Documento que autoriza o projeto e registra suas informações iniciais de alto nível." },
+      { pergunta: "Business Case", resposta: "Justificativa que compara custos, benefícios, riscos e alternativas de uma iniciativa." },
+      { pergunta: "Premissa", resposta: "Condição considerada verdadeira para planejar, embora ainda não esteja confirmada." },
+      { pergunta: "Restrição", resposta: "Limite que reduz as opções disponíveis ao projeto." },
+      { pergunta: "Dependência", resposta: "Relação em que um trabalho ou resultado depende de outro." },
+      { pergunta: "Risco", resposta: "Evento ou condição incerta que pode afetar os objetivos." },
+      { pergunta: "Issue", resposta: "Problema ou situação que já aconteceu e exige tratamento." },
+      { pergunta: "Probabilidade", resposta: "Chance de um risco acontecer." },
+      { pergunta: "Impacto", resposta: "Consequência de um evento, decisão, risco ou mudança sobre os objetivos." },
+      { pergunta: "Mitigação", resposta: "Ação realizada para reduzir probabilidade ou impacto de uma ameaça." },
+      { pergunta: "Contingência", resposta: "Resposta preparada para ser usada se determinado evento acontecer." },
+      { pergunta: "Escopo do produto", resposta: "Funcionalidades e características da solução entregue." },
+      { pergunta: "Escopo do projeto", resposta: "Trabalho necessário para produzir e entregar o resultado do projeto." },
+      { pergunta: "EAP", resposta: "Decomposição hierárquica do escopo total do trabalho do projeto." },
+      { pergunta: "Pacote de trabalho", resposta: "Componente da EAP que pode ser estimado, atribuído e controlado." },
+      { pergunta: "Baseline", resposta: "Versão aprovada usada como referência para comparação e controle." },
+      { pergunta: "Forecast", resposta: "Previsão atual do resultado provável com base nas informações disponíveis." },
+      { pergunta: "Realizado", resposta: "Aquilo que efetivamente aconteceu no projeto." },
+      { pergunta: "Plano revisado", resposta: "Versão de trabalho atualizada após análise de novas informações." },
+      { pergunta: "Rebaseline", resposta: "Aprovação de uma nova referência, preservando o histórico da anterior." },
+      { pergunta: "Desvio", resposta: "Diferença entre o resultado planejado e o realizado ou previsto." },
+      { pergunta: "Tolerância", resposta: "Faixa de variação que pode ser administrada sem escalonamento adicional." },
+      { pergunta: "Mudança", resposta: "Alteração proposta ou aprovada em elemento controlado do projeto." },
+      { pergunta: "Solicitação de mudança", resposta: "Registro formal de uma alteração proposta e de sua justificativa." },
+      { pergunta: "Controle integrado de mudanças", resposta: "Processo de avaliar impactos e decidir mudanças considerando o projeto como um todo." },
+      { pergunta: "Plano de mudanças", resposta: "Definição de como mudanças serão registradas, analisadas, decididas e comunicadas." },
+      { pergunta: "Análise de impacto", resposta: "Avaliação dos efeitos de uma decisão sobre escopo, prazo, custo, qualidade, riscos e outras áreas." },
+      { pergunta: "Comitê de mudanças", resposta: "Grupo autorizado a avaliar e decidir determinadas solicitações de mudança." },
+      { pergunta: "Scope creep", resposta: "Crescimento não controlado do escopo sem análise e aprovação adequadas." },
+      { pergunta: "Ciclo de vida", resposta: "Conjunto de fases pelas quais o projeto passa do início ao encerramento." },
+      { pergunta: "Fase", resposta: "Parte do ciclo de vida que agrupa trabalhos e resultados relacionados." },
+      { pergunta: "Iniciação", resposta: "Grupo de processos que compreende a necessidade e autoriza o projeto ou fase." },
+      { pergunta: "Planejamento", resposta: "Grupo de processos que define como os objetivos serão alcançados." },
+      { pergunta: "Execução", resposta: "Grupo de processos que coordena e realiza o trabalho planejado." },
+      { pergunta: "Monitoramento e controle", resposta: "Grupo de processos que compara, prevê e trata desempenho, desvios e mudanças." },
+      { pergunta: "Encerramento", resposta: "Grupo de processos que formaliza aceite, transição e conclusão." },
+      { pergunta: "Planejamento progressivo", resposta: "Detalhamento do plano conforme novas informações se tornam disponíveis." },
+      { pergunta: "Homologação", resposta: "Validação da solução pelos responsáveis com base em critérios acordados." },
+      { pergunta: "Aceite", resposta: "Confirmação formal de que uma entrega atende às condições acordadas." },
+      { pergunta: "Transição", resposta: "Transferência do resultado do projeto para operação, suporte ou uso contínuo." },
+      { pergunta: "Lição aprendida", resposta: "Conhecimento registrado para melhorar decisões e trabalhos futuros." },
+      { pergunta: "Abordagem preditiva", resposta: "Abordagem que busca planejar antecipadamente escopo e execução com maior estabilidade." },
+      { pergunta: "Abordagem iterativa", resposta: "Abordagem que aprimora a solução por ciclos sucessivos de aprendizagem." },
+      { pergunta: "Abordagem incremental", resposta: "Abordagem que entrega partes utilizáveis da solução progressivamente." },
+      { pergunta: "Abordagem adaptativa", resposta: "Abordagem que ajusta frequentemente trabalho e prioridades diante de incerteza." },
+      { pergunta: "Abordagem híbrida", resposta: "Combinação intencional de práticas preditivas e adaptativas." },
+      { pergunta: "Sprint", resposta: "Período fixo de trabalho usado para produzir um incremento e alcançar um objetivo." },
+      { pergunta: "Incremento", resposta: "Parte integrada e utilizável do produto criada durante o desenvolvimento." },
+      { pergunta: "Backlog", resposta: "Lista ordenada de necessidades, melhorias ou trabalhos potenciais." },
+      { pergunta: "Caminho crítico", resposta: "Sequência de atividades que determina a duração mínima prevista do projeto." },
+      { pergunta: "Folga", resposta: "Tempo que uma atividade pode variar sem produzir determinado impacto no cronograma." },
+      { pergunta: "Eficácia", resposta: "Capacidade de alcançar o resultado pretendido." },
+      { pergunta: "Eficiência", resposta: "Capacidade de alcançar resultado utilizando adequadamente tempo e recursos." },
+      { pergunta: "Indicador", resposta: "Medida usada para acompanhar condição, desempenho ou resultado." },
+      { pergunta: "Baseline de métricas", resposta: "Valor inicial usado para comparar a evolução de um indicador." },
+      { pergunta: "Meta", resposta: "Valor desejado para um indicador dentro de um prazo." },
+      { pergunta: "Taxa de resolução", resposta: "Proporção de casos resolvidos em relação ao conjunto definido como denominador." },
+      { pergunta: "Critério de sucesso", resposta: "Condição usada para avaliar se projeto, produto ou benefício alcançou o resultado esperado." },
+      { pergunta: "Pensamento sistêmico", resposta: "Análise das relações e impactos entre diferentes partes do projeto." },
+      { pergunta: "Trade-off", resposta: "Escolha que melhora um aspecto enquanto exige concessão em outro." },
+      { pergunta: "Roteiro analítico", resposta: "Sequência: fato, referência, impacto, opções, autoridade e atualização." }
+    ];
+
+    const STORAGE_KEY = "flashcards-modulo1-progress-v3";
+
+    const el = {
+      correct: document.getElementById("correctCount"),
+      wrong: document.getElementById("wrongCount"),
+      remaining: document.getElementById("remainingCount"),
+      progressText: document.getElementById("progressText"),
+      progressBar: document.getElementById("progressBar"),
+      question: document.getElementById("question"),
+      answer: document.getElementById("answer"),
+      hint: document.getElementById("hint"),
+      attemptBadge: document.getElementById("attemptBadge"),
+      showAnswer: document.getElementById("showAnswerBtn"),
+      ratingActions: document.getElementById("ratingActions"),
+      wrongBtn: document.getElementById("wrongBtn"),
+      correctBtn: document.getElementById("correctBtn"),
+      feedback: document.getElementById("feedback"),
+      studyArea: document.getElementById("studyArea"),
+      completeArea: document.getElementById("completeArea"),
+      completeIcon: document.getElementById("completeIcon"),
+      completeTitle: document.getElementById("completeTitle"),
+      completeSummary: document.getElementById("completeSummary"),
+      reviewNote: document.getElementById("reviewNote"),
+      reviewWrongBtn: document.getElementById("reviewWrongBtn"),
+      resetTop: document.getElementById("resetTop"),
+      resetComplete: document.getElementById("resetComplete"),
+      installCard: document.getElementById("installCard"),
+      installHelpBtn: document.getElementById("installHelpBtn"),
+      installModal: document.getElementById("installModal"),
+      closeInstallModal: document.getElementById("closeInstallModal")
+    };
+
+    let state = loadState() || freshState();
+
+    function freshState() {
+      return {
+        queue: flashcards.map((_, index) => index),
+        mastered: [],
+        wrongCards: [],
+        wrongTotal: 0,
+        attempts: {},
+        answerVisible: false,
+        mode: "initial"
+      };
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return null;
+        const saved = JSON.parse(raw);
+
+        const valid = saved &&
+          Array.isArray(saved.queue) &&
+          Array.isArray(saved.mastered) &&
+          Array.isArray(saved.wrongCards) &&
+          typeof saved.wrongTotal === "number" &&
+          ["initial", "review"].includes(saved.mode) &&
+          saved.queue.every(i => Number.isInteger(i) && i >= 0 && i < flashcards.length) &&
+          saved.mastered.every(i => Number.isInteger(i) && i >= 0 && i < flashcards.length) &&
+          saved.wrongCards.every(i => Number.isInteger(i) && i >= 0 && i < flashcards.length);
+
+        return valid ? saved : null;
+      } catch {
+        return null;
+      }
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function currentIndex() {
+      return state.queue[0];
+    }
+
+    function render() {
+      const total = flashcards.length;
+      const mastered = state.mastered.length;
+      const pendingWrong = state.wrongCards.filter(i => !state.mastered.includes(i));
+      const remaining = state.mode === "review" ? state.queue.length : total - mastered;
+
+      el.correct.textContent = mastered;
+      el.wrong.textContent = state.wrongTotal;
+      el.remaining.textContent = remaining;
+      el.progressText.textContent = `${mastered}/${total}`;
+      el.progressBar.style.width = `${(mastered / total) * 100}%`;
+
+      if (state.queue.length === 0) {
+        el.studyArea.classList.add("hidden");
+        el.completeArea.classList.add("visible");
+
+        if (pendingWrong.length > 0) {
+          el.completeIcon.textContent = "↻";
+          el.completeTitle.textContent = "Primeira rodada concluída";
+          el.completeSummary.textContent = `Você terminou a rodada e tem ${pendingWrong.length} questão${pendingWrong.length === 1 ? "" : "ões"} errada${pendingWrong.length === 1 ? "" : "s"} para revisar.`;
+          el.reviewNote.textContent = "Você pode revisar somente os erros agora ou continuar depois nesta mesma sessão.";
+          el.reviewNote.classList.add("visible");
+          el.reviewWrongBtn.style.display = "inline-block";
+          el.reviewWrongBtn.textContent = `Revisar erradas (${pendingWrong.length})`;
+        } else {
+          el.completeIcon.textContent = "✓";
+          el.completeTitle.textContent = "Parabéns! Você acertou todos!";
+          el.completeSummary.textContent = `Você concluiu os ${total} flashcards com ${state.wrongTotal} erro${state.wrongTotal === 1 ? "" : "s"} registrado${state.wrongTotal === 1 ? "" : "s"}.`;
+          el.reviewNote.classList.remove("visible");
+          el.reviewWrongBtn.style.display = "none";
+        }
+
+        saveState();
+        return;
+      }
+
+      el.studyArea.classList.remove("hidden");
+      el.completeArea.classList.remove("visible");
+
+      const index = currentIndex();
+      const card = flashcards[index];
+      const attempts = state.attempts[index] || 0;
+
+      el.question.textContent = card.pergunta;
+      el.answer.textContent = card.resposta;
+      el.answer.classList.toggle("visible", state.answerVisible);
+      el.showAnswer.style.display = state.answerVisible ? "none" : "block";
+      el.ratingActions.classList.toggle("visible", state.answerVisible);
+      el.hint.textContent = state.answerVisible
+        ? "Agora avalie se você lembrou corretamente antes de ver a definição."
+        : state.mode === "review"
+          ? "Revisão dos erros: tente lembrar antes de revelar a resposta."
+          : "Pense na definição antes de revelar a resposta.";
+      el.attemptBadge.textContent = state.mode === "review"
+        ? `Revisão • tentativa ${attempts + 1}`
+        : attempts === 0 ? "Primeira vez" : `Tentativa ${attempts + 1}`;
+
+      el.feedback.textContent = "";
+      el.feedback.className = "feedback";
+
+      saveState();
+    }
+
+    function revealAnswer() {
+      if (!state.queue.length) return;
+      state.answerVisible = true;
+      render();
+    }
+
+    function markCorrect() {
+      if (!state.answerVisible || !state.queue.length) return;
+
+      const index = state.queue.shift();
+      if (!state.mastered.includes(index)) state.mastered.push(index);
+      state.wrongCards = state.wrongCards.filter(i => i !== index);
+      state.attempts[index] = (state.attempts[index] || 0) + 1;
+      state.answerVisible = false;
+
+      el.feedback.textContent = "Acertou. Card concluído.";
+      el.feedback.className = "feedback success";
+
+      render();
+    }
+
+    function markWrong() {
+      if (!state.answerVisible || !state.queue.length) return;
+
+      const index = state.queue.shift();
+      if (!state.wrongCards.includes(index)) state.wrongCards.push(index);
+      state.wrongTotal += 1;
+      state.attempts[index] = (state.attempts[index] || 0) + 1;
+
+      // Na primeira rodada, o card errado fica separado para "fazer depois".
+      // Durante a revisão, ele volta ao fim da fila até ser acertado.
+      if (state.mode === "review") state.queue.push(index);
+
+      state.answerVisible = false;
+      render();
+    }
+
+    function startWrongReview() {
+      const pendingWrong = state.wrongCards.filter(i => !state.mastered.includes(i));
+      if (!pendingWrong.length) return;
+      state.queue = [...pendingWrong];
+      state.mode = "review";
+      state.answerVisible = false;
+      render();
+    }
+
+    function resetStudy() {
+      state = freshState();
+      localStorage.removeItem(STORAGE_KEY);
+      render();
+    }
+
+
+
+    function isIOS() {
+      return /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    }
+
+    function isStandalone() {
+      return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+    }
+
+    function setupInstallHelp() {
+      if (isIOS() && !isStandalone()) el.installCard.classList.add("visible");
+
+      el.installHelpBtn.addEventListener("click", () => {
+        el.installModal.classList.add("visible");
+      });
+
+      el.closeInstallModal.addEventListener("click", () => {
+        el.installModal.classList.remove("visible");
+      });
+
+      el.installModal.addEventListener("click", (event) => {
+        if (event.target === el.installModal) el.installModal.classList.remove("visible");
+      });
+    }
+
+    el.showAnswer.addEventListener("click", revealAnswer);
+    el.correctBtn.addEventListener("click", markCorrect);
+    el.wrongBtn.addEventListener("click", markWrong);
+    el.reviewWrongBtn.addEventListener("click", startWrongReview);
+    el.resetTop.addEventListener("click", resetStudy);
+    el.resetComplete.addEventListener("click", resetStudy);
+
+    document.addEventListener("keydown", (event) => {
+      if (event.target.matches("input, textarea, select")) return;
+
+      if (event.code === "Space") {
+        event.preventDefault();
+        if (!state.answerVisible) revealAnswer();
+      }
+
+      if (state.answerVisible && event.key === "1") markWrong();
+      if (state.answerVisible && event.key === "2") markCorrect();
+    });
+
+    setupInstallHelp();
+    render();
+  </script>
+</body>
+</html>
